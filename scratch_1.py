@@ -1,15 +1,15 @@
 import os,sys,shutil,glob
 import Bio.PDB
 import pandas as pd
-
+import subprocess
 RES = ['ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER',
        'THR', 'TRP', 'TYR', 'VAL', 'HIE']
 
 
 def sheba_run(ref, org):
-    cmd3 = GEAR + '/sheba_01 -x ' + ref + '.pdb ' + org + '.pdb'
+    cmd3 = 'sheba_01 -x ' + ref + '.pdb ' + org + '.pdb'
     subprocess.call(cmd3, shell=True)
-    cmd4 = GEAR + '/sheba_01 -t ' + org + '.trf ' + org + '.pdb'
+    cmd4 = 'sheba_01 -t ' + org + '.trf ' + org + '.pdb'
     subprocess.call(cmd4, shell=True)
     shutil.copy(org + '.pdb.pdb', org + '_tr.pdb')
     os.remove(org + '.trf')
@@ -32,7 +32,7 @@ def acc_chem_count(sam, rfeats, folder, ref):
     wdir1 = os.getcwd()
 
     if not os.path.exists(sam + '_aa.out'):
-        os.system(GEAR + '/enva_v1.4 -a ' + sam + '_inp.pdb > ' + sam + '_aa.out')
+        os.system('enva.v2 -a ' + sam + '_inp.pdb > ' + sam + '_aa.out')
 
     mt_raccs = []
     for i in range(len(rfeats)):
@@ -71,15 +71,15 @@ def acc_chem_count(sam, rfeats, folder, ref):
         else:
             enva_res = bbb[0] + 'B' + bbb[1] + '.pdb.env'
         if not os.path.exists(pdb.split('.')[0].replace('_h', '') + '.out'):
-            os.system(GEAR + '/enva_v1.4 -m ' + pdb.split('.')[0].replace('_h', '') + '.pdb > ' + pdb.split('.')[0].replace('_h', '') + '.out')
+            os.system('enva.v2 -m ' + pdb.split('.')[0].replace('_h', '') + '.pdb > ' + pdb.split('.')[0].replace('_h', '') + '.out')
         if not os.path.exists(pdb.split('.')[0] + '_bb.out'):
-            os.system(GEAR + '/enva_v1.4 -b ' + pdb.split('.')[0] + '.pdb > ' + pdb.split('.')[0].replace('_h','') + '_bb.out')
+            os.system('enva.v2 -b ' + pdb.split('.')[0] + '.pdb > ' + pdb.split('.')[0].replace('_h','') + '_bb.out')
         if not os.path.exists(pdb.split('.')[0].replace('_h', '') + '_aa.out'):
-            os.system(GEAR + '/enva_v1.4 -a ' + pdb.split('.')[0].replace('_h', '') + '.pdb > ' + pdb.split('.')[0].replace('_h', '') + '_aa.out')
+            os.system('enva.v2 -a ' + pdb.split('.')[0].replace('_h', '') + '.pdb > ' + pdb.split('.')[0].replace('_h', '') + '_aa.out')
         if not os.path.exists(pdb.split('.')[0].replace('_h', '') + '.pdb.csv'):
-            os.system('python ' + FLEX_PRED + '/predictFluct.py ' + pdb.split('.')[0].replace('_h', '') + '.pdb XRAY > ' +pdb.split('.')[0].replace('_h', '') + '.pdb.csv')
+            os.system('python ' + '/lwork02/flexPred/predictFluct.py ' + pdb.split('.')[0].replace('_h', '') + '.pdb XRAY > ' +pdb.split('.')[0].replace('_h', '') + '.pdb.csv')
         if not os.path.exists(enva_res):
-            os.system(GEAR + '/enva_v1.4 -e ' + pdb.split('.')[0].replace('_h', '') + '.pdb B')
+            os.system('enva.v2 -e ' + pdb.split('.')[0].replace('_h', '') + '.pdb B')
 
         raccs = []
         for i in range(len(rfeats)):
@@ -301,8 +301,8 @@ def conv(aa, cc):
                         ff1.write(line)
 
         if cc == 'sim_conf':
-            os.system('%s/clean_pdb.py %s-%s_t.pdb A' % (ROSETTA_BIN, aa1, ser))
-            os.system('%s/clean_pdb.py %s-%s_t.pdb B' % (ROSETTA_BIN, aa1, ser))
+            os.system('clean_pdb.py %s-%s_t.pdb A' % (aa1, ser))
+            os.system('clean_pdb.py %s-%s_t.pdb B' % (aa1, ser))
             os.system('cat %s-%s_t_A.pdb %s-%s_t_B.pdb > %s-%s.pdb' % (aa1, ser, aa1, ser, aa1, ser))
             os.remove('%s-%s_t_A.pdb' % (aa1, ser))
             os.remove('%s-%s_t_B.pdb' % (aa1, ser))
@@ -359,10 +359,17 @@ else:
     except OSError:
         pass
 
-    GEAR = '/HIP/neoscan_gear'
-    ROSETTA_BIN = '/HIP/rosetta_src_2019.40.60963_bundle/tools/protein_tools/scripts'
-    FLEX_PRED = '/HIP/flexPred'
+    os.environ['neogear'] = '/lwork02/neoscan_gear/'
+    os.environ['rosetta'] = '/lwork02/rosetta_src_2019.40.60963_bundle/'
+    #os.environ['flexpred'] = '/lwork02/flexPred/'
 
+    #GEAR = 'neoantigentool/neoscan_gear'
+    #ROSETTA_BIN = '/HIP/rosetta_src_2019.40.60963_bundle/tools/protein_tools/scripts'
+    #FLEX_PRED = 'neoantigentool/flexPred'
+    os.environ['PATH'] += ':' + os.environ['PATH'] + ':' + os.environ['neogear']
+    os.environ['PATH'] += ':' + os.environ['PATH'] + ':' + os.environ['rosetta'] + 'main/source/bin/:' + os.environ['rosetta'] + 'tools/protein_tools/scripts/'
+    #os.environ['PATH'] += ':' + os.environ['PATH'] + ':' + os.environ['flexpred']
+    print(os.environ['PATH'])
     wdir = os.getcwd()
 
     with open(temp + '_cl.pdb', 'w') as ffx:
@@ -383,7 +390,7 @@ else:
     ext_chain(temp + '_cl', 'B', 'lig')
 
     if not os.path.exists(pdb + '.out'):
-        cmd = GEAR + '/enva_v1.4 -m ' + pdb + '.pdb xxxxB > ' + pdb + '.out'
+        cmd = 'enva.v2 -m ' + pdb + '.pdb xxxxB > ' + pdb + '.out'
         subprocess.call(cmd, shell=True)
 
     rfeats = []
@@ -394,8 +401,8 @@ else:
                 envs = ' '.join(line[56:].split()).split(' ')
                 if int(envs[8]) > 0:
                     rfeats.append(envs[3] + '_' + envs[5] + '_' + envs[6])
-
-    if os.path.exists('traj_1/pdb_from_prod') :
+    print(os.getcwd())
+    if os.path.exists(sam + '/traj_1/pdb_from_prod') :
         conv(sam,'sim_conf')
         os.chdir(sam)
         acc_chem_count(sam.replace('_A0201', ''), rfeats, 'traj_1/pdb_from_prod',wdir + '/' + sam.replace('_A0201', '') + '_cl')
